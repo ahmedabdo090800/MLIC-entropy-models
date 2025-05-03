@@ -9,6 +9,9 @@ from utils.func import update_registered_buffers, get_scale_table
 from utils.ckbd import *
 from modules.transform import *
 
+# first step
+from compressai.entropy_models import EntropyBottleneck
+
 
 class MLICPlusPlus(CompressionModel):
     def __init__(self, config, **kwargs):
@@ -32,8 +35,8 @@ class MLICPlusPlus(CompressionModel):
         self.h_a = HyperAnalysis(M=M, N=N)
         self.h_s = HyperSynthesis(M=M, N=N)
 
-        # Gussian Conditional
-        self.gaussian_conditional = GaussianConditional(None)
+        # Gaussian Conditional
+        self.entropy_bottleneck = EntropyBottleneck(N)
 
         self.local_context = nn.ModuleList(
             LocalContext(dim=slice_ch)
@@ -54,6 +57,7 @@ class MLICPlusPlus(CompressionModel):
             LinearGlobalIntraContext(dim=slice_ch) if i else None
             for i in range(slice_num)
         )
+
         self.entropy_parameters_anchor = nn.ModuleList(
             EntropyParameters(in_dim=M * 2 + slice_ch * 6, out_dim=slice_ch * 2)
             if i else EntropyParameters(in_dim=M * 2, out_dim=slice_ch * 2)
